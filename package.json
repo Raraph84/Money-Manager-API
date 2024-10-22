@@ -1,0 +1,15 @@
+{
+  "name": "money-manager-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "keywords": [],
+  "author": "Raraph84",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.5",
+    "mysql2": "^3.11.3",
+    "raraph84-lib": "^2.19.0"
+  }
+}
