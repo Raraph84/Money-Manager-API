@@ -49,7 +49,7 @@ module.exports.run = async (request, database) => {
             return;
         }
 
-        request.end(401, "Invalid username or password");
+        request.end(401, "Invalid password");
         return;
     }
 

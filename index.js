@@ -61,8 +61,7 @@ api.on("request", async (/** @type {import("raraph84-lib/src/Request")} */ reque
 
         let token;
         try {
-            [token] = await database.query("SELECT * FROM tokens WHERE token=? && date>?", [request.headers.authorization, request.date - 24 * 60 * 60 * 1000]);
-            token = token[0];
+            token = (await database.query("SELECT * FROM tokens WHERE token=? && date>?", [request.headers.authorization, request.date - 24 * 60 * 60 * 1000]))[0][0];
         } catch (error) {
             request.end(500, "Internal server error");
             console.log(`SQL Error - ${__filename} - ${error}`);
@@ -74,8 +73,7 @@ api.on("request", async (/** @type {import("raraph84-lib/src/Request")} */ reque
             return;
         }
 
-        request.userId = token.user_id;
-        request.admin = !!token.admin && config.admins.includes(token.user_id);
+        request.authenticated = true;
 
         if (request.date > token.date) {
             database.query("UPDATE tokens SET date=? WHERE token=?", [request.date, token.token])
