@@ -4,5 +4,5 @@
         "user": "money_manager_api",
         "database": "money_manager"
     },
-    "apiPort": 8080
+    "apiPort": 8142
 }
