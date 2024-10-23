@@ -165,12 +165,54 @@ const getOutflows = async (database, outflowsId = null, includes = []) => {
     }));
 };
 
+/**
+ * @param {import("mysql2/promise").Pool} database 
+ * @param {number[]|null} flowsId 
+ * @param {string[]} includes 
+ * @returns {Promise<flow[]>} 
+ */
+const getFlows = async (database, flowsId = null, includes = []) => {
+
+    let sql = "SELECT * FROM flows";
+    const args = [];
+    if (flowsId) {
+        sql += (sql.includes("WHERE") ? " &&" : " WHERE") + " flow_id IN (?)";
+        args.push(flowsId);
+    }
+
+    let flows;
+    try {
+        [flows] = await database.query(sql, args);
+    } catch (error) {
+        console.log(`SQL Error - ${__filename} - ${error}`);
+        throw new Error("Database error");
+    }
+
+    const inflows = includes.includes("inflow") && flows.length > 0 ? await getInflows(database, flows.filter((flow) => flow.inflow_id).map((flow) => flow.inflow_id), subIncludes(includes, "inflow")) : null;
+    const fromAccounts = includes.includes("fromaccount") && flows.length > 0 ? await getAccounts(database, flows.filter((flow) => flow.from_account_id).map((flow) => flow.from_account_id)) : null;
+    const outflows = includes.includes("outflow") && flows.length > 0 ? await getOutflows(database, flows.filter((flow) => flow.outflow_id).map((flow) => flow.outflow_id), subIncludes(includes, "outflow")) : null;
+    const toAccounts = includes.includes("toaccount") && flows.length > 0 ? await getAccounts(database, flows.filter((flow) => flow.to_account_id).map((flow) => flow.to_account_id)) : null;
+
+    return flows.map((flow) => ({
+        id: flow.flow_id,
+        inflow: inflows?.find((inflow) => inflow.id === flow.inflow_id) ?? flow.inflow_id,
+        fromAccount: fromAccounts?.find((fromAccount) => fromAccount.id === flow.from_account_id) ?? flow.from_account_id,
+        outflow: outflows?.find((outflow) => outflow.id === flow.outflow_id) ?? flow.outflow_id,
+        toAccount: toAccounts?.find((toAccount) => toAccount.id === flow.to_account_id) ?? flow.to_account_id,
+        amount: flow.amount,
+        date: flow.date
+    }));
+};
+
+const subIncludes = (includes, name) => includes.filter((include) => include.startsWith(name + ".")).map((include) => include.replace(name + ".", ""));
+
 module.exports = {
     getPeople,
     getBusinesses,
     getAccounts,
     getInflows,
-    getOutflows
+    getOutflows,
+    getFlows
 };
 
 /**
@@ -215,4 +257,14 @@ module.exports = {
  *     endDate: number|null,
  *     date: number
  * }} outflow 
+ * 
+ * @typedef {{
+ *     id: number,
+ *     inflow: inflow|number|null,
+ *     fromAccount: account|number|null,
+ *     outflow: outflow|number|null,
+ *     toAccount: account|number|null,
+ *     amount: number,
+ *     date: number
+ * }} flow 
  */
