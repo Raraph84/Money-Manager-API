@@ -22,7 +22,8 @@ const getPeople = async (database, peopleId = null) => {
 
     return people.map((person) => ({
         id: person.person_id,
-        name: person.name
+        name: person.name,
+        balance: person.balance
     }));
 };
 
@@ -56,6 +57,35 @@ const getBusinesses = async (database, businessesId = null) => {
 
 /**
  * @param {import("mysql2/promise").Pool} database 
+ * @param {number[]|null} accountsId 
+ * @returns {Promise<account[]>} 
+ */
+const getAccounts = async (database, accountsId = null) => {
+
+    let sql = "SELECT * FROM accounts";
+    const args = [];
+    if (accountsId) {
+        sql += (sql.includes("WHERE") ? " &&" : " WHERE") + " account_id IN (?)";
+        args.push(accountsId);
+    }
+
+    let accounts;
+    try {
+        [accounts] = await database.query(sql, args);
+    } catch (error) {
+        console.log(`SQL Error - ${__filename} - ${error}`);
+        throw new Error("Database error");
+    }
+
+    return accounts.map((account) => ({
+        id: account.account_id,
+        name: account.name,
+        balance: account.balance
+    }));
+};
+
+/**
+ * @param {import("mysql2/promise").Pool} database 
  * @param {number[]|null} inflowsId 
  * @param {string[]} includes 
  * @returns {Promise<inflow[]>} 
@@ -78,15 +108,19 @@ const getInflows = async (database, inflowsId = null, includes = []) => {
     }
 
     const people = includes.includes("person") && inflows.length > 0 ? await getPeople(database, inflows.map((inflow) => inflow.person_id)) : null;
+    const accounts = includes.includes("account") && inflows.length > 0 ? await getAccounts(database, inflows.map((inflow) => inflow.account_id)) : null;
     const fromBusinesses = includes.includes("frombusiness") && inflows.length > 0 ? await getBusinesses(database, inflows.filter((inflow) => inflow.from_business_id).map((inflow) => inflow.from_business_id)) : null;
 
     return inflows.map((inflow) => ({
         id: inflow.inflow_id,
         person: people?.find((person) => person.id === inflow.person_id) ?? inflow.person_id,
+        account: accounts?.find((account) => account.id === inflow.account_id) ?? inflow.account_id,
         fromName: inflow.from_name,
         fromBusiness: fromBusinesses?.find((business) => business.id === inflow.from_business_id) ?? inflow.from_business_id,
         amount: inflow.amount,
         description: inflow.description,
+        startDate: inflow.start_date,
+        endDate: inflow.end_date,
         date: inflow.date
     }));
 };
@@ -115,14 +149,18 @@ const getOutflows = async (database, outflowsId = null, includes = []) => {
     }
 
     const people = includes.includes("person") && outflows.length > 0 ? await getPeople(database, outflows.map((outflow) => outflow.person_id)) : null;
+    const accounts = includes.includes("account") && outflows.length > 0 ? await getAccounts(database, outflows.map((outflow) => outflow.account_id)) : null;
     const toBusinesses = includes.includes("tobusiness") && outflows.length > 0 ? await getBusinesses(database, outflows.map((outflow) => outflow.to_business_id)) : null;
 
     return outflows.map((outflow) => ({
         id: outflow.outflow_id,
         person: people?.find((person) => person.id === outflow.person_id) ?? outflow.person_id,
+        account: accounts?.find((account) => account.id === outflow.account_id) ?? outflow.account_id,
         toBusiness: toBusinesses?.find((business) => business.id === outflow.to_business_id) ?? outflow.to_business_id,
         amount: outflow.amount,
         description: outflow.description,
+        startDate: outflow.start_date,
+        endDate: outflow.end_date,
         date: outflow.date
     }));
 };
@@ -130,6 +168,7 @@ const getOutflows = async (database, outflowsId = null, includes = []) => {
 module.exports = {
     getPeople,
     getBusinesses,
+    getAccounts,
     getInflows,
     getOutflows
 };
@@ -137,7 +176,8 @@ module.exports = {
 /**
  * @typedef {{
  *     id: number,
- *     name: string
+ *     name: string,
+ *     balance: number
  * }} person 
  * 
  * @typedef {{
@@ -147,20 +187,32 @@ module.exports = {
  * 
  * @typedef {{
  *     id: number,
- *     person: number,
+ *     name: string,
+ *     balance: number
+ * }} account 
+ * 
+ * @typedef {{
+ *     id: number,
+ *     person: person|number,
+ *     account: account|number,
  *     fromName: string|null,
- *     fromBusiness: number|null,
+ *     fromBusiness: business|number|null,
  *     amount: number,
  *     description: string|null,
+ *     startDate: number|null,
+ *     endDate: number|null,
  *     date: number
  * }} inflow 
  * 
  * @typedef {{
  *     id: number,
- *     person: number,
- *     toBusiness: number,
+ *     person: number|number,
+ *     account: account|number,
+ *     toBusiness: business|number,
  *     amount: number,
  *     description: string|null,
+ *     startDate: number|null,
+ *     endDate: number|null,
  *     date: number
  * }} outflow 
  */
