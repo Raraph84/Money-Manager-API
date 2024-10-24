@@ -31,12 +31,27 @@ module.exports.run = async (request, database) => {
         return;
     }
 
-    if (typeof request.jsonBody.toBusiness === "undefined") {
-        request.end(400, "Missing to business");
+    if (typeof request.jsonBody.toName === "undefined" && typeof request.jsonBody.toBusiness === "undefined") {
+        request.end(400, "Missing to name or to business");
         return;
     }
 
-    if (typeof request.jsonBody.toBusiness !== "number") {
+    if (typeof request.jsonBody.toName !== "undefined" && typeof request.jsonBody.toBusiness !== "undefined") {
+        request.end(400, "To name and to business cannot be both defined");
+        return;
+    }
+
+    if (typeof request.jsonBody.toName !== "undefined" && typeof request.jsonBody.toName !== "string") {
+        request.end(400, "To name must be a string");
+        return;
+    }
+
+    if (typeof request.jsonBody.toName !== "undefined" && (request.jsonBody.toName.length < 2 || request.jsonBody.toName.length > 50)) {
+        request.end(400, "To name must be between 2 and 50 characters");
+        return;
+    }
+
+    if (typeof request.jsonBody.toBusiness !== "undefined" && typeof request.jsonBody.toBusiness !== "number") {
         request.end(400, "To business must be a number");
         return;
     }
@@ -142,7 +157,7 @@ module.exports.run = async (request, database) => {
 
     let id;
     try {
-        id = (await database.query("INSERT INTO outflows (person_id, account_id, from_name, from_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [person.id, account.id, request.jsonBody.fromName ?? null, toBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
+        id = (await database.query("INSERT INTO outflows (person_id, account_id, to_name, to_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [person.id, account.id, request.jsonBody.toName ?? null, toBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
     } catch (error) {
         request.end(500, "Internal server error");
         console.log(`SQL Error - ${__filename} - ${error}`);
