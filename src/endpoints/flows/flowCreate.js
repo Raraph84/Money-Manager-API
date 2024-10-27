@@ -147,7 +147,7 @@ module.exports.run = async (request, database) => {
 
     let id;
     try {
-        id = (await database.query("INSERT INTO flows (from_account_id, to_account_id, amount, date) VALUES (?, ?, ?, ?)", [fromAccount.id, toAccount.id, request.jsonBody.amount, request.jsonBody.date]))[0].insertId;
+        id = (await database.query("INSERT INTO flows (inflow_id, from_account_id, outflow_id, to_account_id, amount, date) VALUES (?, ?, ?, ?, ?, ?)", [inflow?.id ?? null, fromAccount?.id ?? null, outflow?.id ?? null, toAccount?.id ?? null, request.jsonBody.amount, request.jsonBody.date]))[0].insertId;
         if (fromAccount) await database.query("UPDATE accounts SET balance=ROUND(balance-?, 2) WHERE account_id=?", [request.jsonBody.amount, fromAccount.id]);
         if (toAccount) await database.query("UPDATE accounts SET balance=ROUND(balance+?, 2) WHERE account_id=?", [request.jsonBody.amount, toAccount.id]);
     } catch (error) {
