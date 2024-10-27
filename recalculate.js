@@ -19,7 +19,7 @@ tasks.addTask((resolve, reject) => {
     });
 }, (resolve) => database.end().then(() => resolve()));
 
-tasks.addTask(async (resolve, reject) => {
+tasks.addTask(async (resolve) => {
 
     const people = await getPeople(database);
     const accounts = await getAccounts(database);
@@ -50,12 +50,6 @@ tasks.addTask(async (resolve, reject) => {
     for (const account of accounts) {
 
         let balance = 0;
-
-        for (const inflow of inflows.filter((inflow) => inflow.account === account.id))
-            balance += inflow.amount;
-
-        for (const outflow of outflows.filter((outflow) => outflow.account === account.id))
-            balance -= outflow.amount;
 
         for (const flow of flows.filter((flow) => flow.fromAccount === account.id))
             balance -= flow.amount;

@@ -1,4 +1,4 @@
-const { getPeople, getAccounts, getBusinesses } = require("../../resources");
+const { getInflows, getOutflows, getAccounts } = require("../../resources");
 
 /**
  * @param {import("raraph84-lib/src/Request")} request 
@@ -11,23 +11,53 @@ module.exports.run = async (request, database) => {
         return;
     }
 
-    if (typeof request.jsonBody.fromAccount === "undefined") {
-        request.end(400, "Missing from account");
+    if (typeof request.jsonBody.inflow === "undefined" && typeof request.jsonBody.fromAccount === "undefined") {
+        request.end(400, "Missing inflow or from account");
         return;
     }
 
-    if (typeof request.jsonBody.fromAccount !== "number") {
+    if (typeof request.jsonBody.inflow !== "undefined" && typeof request.jsonBody.fromAccount !== "undefined") {
+        request.end(400, "Inflow and from account cannot be both defined");
+        return;
+    }
+
+    if (typeof request.jsonBody.inflow !== "undefined" && typeof request.jsonBody.inflow !== "number") {
+        request.end(400, "Inflow must be a number");
+        return;
+    }
+
+    if (typeof request.jsonBody.fromAccount !== "undefined" && typeof request.jsonBody.fromAccount !== "number") {
         request.end(400, "From account must be a number");
         return;
     }
 
-    if (typeof request.jsonBody.toAccount === "undefined") {
-        request.end(400, "Missing to account");
+    if (typeof request.jsonBody.outflow === "undefined" && typeof request.jsonBody.toAccount === "undefined") {
+        request.end(400, "Missing outflow or to account");
         return;
     }
 
-    if (typeof request.jsonBody.toAccount !== "number") {
+    if (typeof request.jsonBody.outflow !== "undefined" && typeof request.jsonBody.toAccount !== "undefined") {
+        request.end(400, "Outflow and to account cannot be both defined");
+        return;
+    }
+
+    if (typeof request.jsonBody.outflow !== "undefined" && typeof request.jsonBody.outflow !== "number") {
+        request.end(400, "Outflow must be a number");
+        return;
+    }
+
+    if (typeof request.jsonBody.toAccount !== "undefined" && typeof request.jsonBody.toAccount !== "number") {
         request.end(400, "To account must be a number");
+        return;
+    }
+
+    if (typeof request.jsonBody.fromAccount === "undefined" && typeof request.jsonBody.toAccount === "undefined") {
+        request.end(400, "Missing from account or to account");
+        return;
+    }
+
+    if (typeof request.jsonBody.fromAccount !== "undefined" && typeof request.jsonBody.toAccount !== "undefined" && request.jsonBody.fromAccount === request.jsonBody.toAccount) {
+        request.end(400, "From account and to account cannot be the same");
         return;
     }
 
@@ -51,44 +81,75 @@ module.exports.run = async (request, database) => {
         return;
     }
 
-    let fromAccount;
-    try {
-        fromAccount = (await getAccounts(database, [request.jsonBody.fromAccount]))[0];
-    } catch (error) {
-        request.end(500, "Internal server error");
-        console.log(`SQL Error - ${__filename} - ${error}`);
-        return;
+    let inflow;
+    if (typeof request.jsonBody.inflow !== "undefined") {
+        try {
+            inflow = (await getInflows(database, [request.jsonBody.inflow]))[0];
+        } catch (error) {
+            request.end(500, "Internal server error");
+            console.log(`SQL Error - ${__filename} - ${error}`);
+            return;
+        }
+
+        if (!inflow) {
+            request.end(400, "Inflow does not exist");
+            return;
+        }
     }
 
-    if (!fromAccount) {
-        request.end(400, "From account does not exist");
-        return;
+    let fromAccount;
+    if (typeof request.jsonBody.fromAccount !== "undefined") {
+        try {
+            fromAccount = (await getAccounts(database, [request.jsonBody.fromAccount]))[0];
+        } catch (error) {
+            request.end(500, "Internal server error");
+            console.log(`SQL Error - ${__filename} - ${error}`);
+            return;
+        }
+
+        if (!fromAccount) {
+            request.end(400, "From account does not exist");
+            return;
+        }
+    }
+
+    let outflow;
+    if (typeof request.jsonBody.outflow !== "undefined") {
+        try {
+            outflow = (await getOutflows(database, [request.jsonBody.outflow]))[0];
+        } catch (error) {
+            request.end(500, "Internal server error");
+            console.log(`SQL Error - ${__filename} - ${error}`);
+            return;
+        }
+
+        if (!outflow) {
+            request.end(400, "Outflow does not exist");
+            return;
+        }
     }
 
     let toAccount;
-    try {
-        toAccount = (await getAccounts(database, [request.jsonBody.toAccount]))[0];
-    } catch (error) {
-        request.end(500, "Internal server error");
-        console.log(`SQL Error - ${__filename} - ${error}`);
-        return;
-    }
+    if (typeof request.jsonBody.toAccount !== "undefined") {
+        try {
+            toAccount = (await getAccounts(database, [request.jsonBody.toAccount]))[0];
+        } catch (error) {
+            request.end(500, "Internal server error");
+            console.log(`SQL Error - ${__filename} - ${error}`);
+            return;
+        }
 
-    if (!toAccount) {
-        request.end(400, "To account does not exist");
-        return;
-    }
-
-    if (fromAccount.id === toAccount.id) {
-        request.end(400, "From and to accounts must be different");
-        return;
+        if (!toAccount) {
+            request.end(400, "To account does not exist");
+            return;
+        }
     }
 
     let id;
     try {
         id = (await database.query("INSERT INTO flows (from_account_id, to_account_id, amount, date) VALUES (?, ?, ?, ?)", [fromAccount.id, toAccount.id, request.jsonBody.amount, request.jsonBody.date]))[0].insertId;
-        await database.query("UPDATE accounts SET balance=ROUND(balance-?, 2) WHERE account_id=?", [request.jsonBody.amount, fromAccount.id]);
-        await database.query("UPDATE accounts SET balance=ROUND(balance+?, 2) WHERE account_id=?", [request.jsonBody.amount, toAccount.id]);
+        if (fromAccount) await database.query("UPDATE accounts SET balance=ROUND(balance-?, 2) WHERE account_id=?", [request.jsonBody.amount, fromAccount.id]);
+        if (toAccount) await database.query("UPDATE accounts SET balance=ROUND(balance+?, 2) WHERE account_id=?", [request.jsonBody.amount, toAccount.id]);
     } catch (error) {
         request.end(500, "Internal server error");
         console.log(`SQL Error - ${__filename} - ${error}`);

@@ -1,4 +1,4 @@
-const { getPeople, getAccounts, getBusinesses } = require("../../resources");
+const { getPeople, getBusinesses } = require("../../resources");
 
 /**
  * @param {import("raraph84-lib/src/Request")} request 
@@ -18,16 +18,6 @@ module.exports.run = async (request, database) => {
 
     if (typeof request.jsonBody.person !== "number") {
         request.end(400, "Person must be a number");
-        return;
-    }
-
-    if (typeof request.jsonBody.account === "undefined") {
-        request.end(400, "Missing account");
-        return;
-    }
-
-    if (typeof request.jsonBody.account !== "number") {
-        request.end(400, "Account must be a number");
         return;
     }
 
@@ -125,20 +115,6 @@ module.exports.run = async (request, database) => {
         return
     }
 
-    let account;
-    try {
-        account = (await getAccounts(database, [request.jsonBody.account]))[0];
-    } catch (error) {
-        request.end(500, "Internal server error");
-        console.log(`SQL Error - ${__filename} - ${error}`);
-        return;
-    }
-
-    if (!account) {
-        request.end(400, "This account does not exist");
-        return;
-    }
-
     let toBusiness;
     if (typeof request.jsonBody.toBusiness !== "undefined") {
         try {
@@ -157,9 +133,8 @@ module.exports.run = async (request, database) => {
 
     let id;
     try {
-        id = (await database.query("INSERT INTO outflows (person_id, account_id, to_name, to_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [person.id, account.id, request.jsonBody.toName ?? null, toBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
+        id = (await database.query("INSERT INTO outflows (person_id, to_name, to_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [person.id, request.jsonBody.toName ?? null, toBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
         await database.query("UPDATE people SET balance=ROUND(balance-?, 2) WHERE person_id=?", [request.jsonBody.amount, person.id]);
-        await database.query("UPDATE accounts SET balance=ROUND(balance-?, 2) WHERE account_id=?", [request.jsonBody.amount, account.id]);
     } catch (error) {
         request.end(500, "Internal server error");
         console.log(`SQL Error - ${__filename} - ${error}`);

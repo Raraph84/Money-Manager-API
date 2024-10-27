@@ -109,13 +109,11 @@ const getInflows = async (database, inflowsId = null, includes = []) => {
     }
 
     const people = includes.includes("person") && inflows.length > 0 ? await getPeople(database, inflows.map((inflow) => inflow.person_id)) : null;
-    const accounts = includes.includes("account") && inflows.length > 0 ? await getAccounts(database, inflows.map((inflow) => inflow.account_id)) : null;
     const fromBusinesses = includes.includes("frombusiness") && inflows.filter((inflow) => inflow.from_business_id).length > 0 ? await getBusinesses(database, inflows.filter((inflow) => inflow.from_business_id).map((inflow) => inflow.from_business_id)) : null;
 
     return inflows.map((inflow) => ({
         id: inflow.inflow_id,
         person: people?.find((person) => person.id === inflow.person_id) ?? inflow.person_id,
-        account: accounts?.find((account) => account.id === inflow.account_id) ?? inflow.account_id,
         fromName: inflow.from_name,
         fromBusiness: fromBusinesses?.find((business) => business.id === inflow.from_business_id) ?? inflow.from_business_id,
         amount: inflow.amount,
@@ -151,13 +149,11 @@ const getOutflows = async (database, outflowsId = null, includes = []) => {
     }
 
     const people = includes.includes("person") && outflows.length > 0 ? await getPeople(database, outflows.map((outflow) => outflow.person_id)) : null;
-    const accounts = includes.includes("account") && outflows.length > 0 ? await getAccounts(database, outflows.map((outflow) => outflow.account_id)) : null;
     const toBusinesses = includes.includes("tobusiness") && outflows.filter((outflow) => outflow.to_business_id).length > 0 ? await getBusinesses(database, outflows.filter((outflow) => outflow.to_business_id).map((outflow) => outflow.to_business_id)) : null;
 
     return outflows.map((outflow) => ({
         id: outflow.outflow_id,
         person: people?.find((person) => person.id === outflow.person_id) ?? outflow.person_id,
-        account: accounts?.find((account) => account.id === outflow.account_id) ?? outflow.account_id,
         toName: outflow.to_name,
         toBusiness: toBusinesses?.find((business) => business.id === outflow.to_business_id) ?? outflow.to_business_id,
         amount: outflow.amount,
@@ -240,7 +236,6 @@ module.exports = {
  * @typedef {{
  *     id: number,
  *     person: person|number,
- *     account: account|number,
  *     fromName: string|null,
  *     fromBusiness: business|number|null,
  *     amount: number,
@@ -253,7 +248,6 @@ module.exports = {
  * @typedef {{
  *     id: number,
  *     person: number|number,
- *     account: account|number,
  *     toName: string|null,
  *     toBusiness: business|number|null,
  *     amount: number,
