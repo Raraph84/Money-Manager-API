@@ -43,6 +43,7 @@ tasks.addTask(async (resolve, reject) => {
             console.log(`Person ${person.name} (${person.id}) balance is correct. (${balance} €)`);
         } else {
             console.log(`Person ${person.name} (${person.id}) balance is incorrect. (${person.balance} € should be ${balance} €)`);
+            await database.query("UPDATE people SET balance=? WHERE person_id=?", [balance, person.id]);
         }
     }
 
@@ -68,6 +69,7 @@ tasks.addTask(async (resolve, reject) => {
             console.log(`Account ${account.name} (${account.id}) balance is correct. (${balance} €)`);
         } else {
             console.log(`Account ${account.name} (${account.id}) balance is incorrect. (${account.balance} € should be ${balance} €)`);
+            await database.query("UPDATE accounts SET balance=? WHERE account_id=?", [balance, account.id]);
         }
     }
 

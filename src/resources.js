@@ -98,6 +98,7 @@ const getInflows = async (database, inflowsId = null, includes = []) => {
         sql += (sql.includes("WHERE") ? " &&" : " WHERE") + " inflow_id IN (?)";
         args.push(inflowsId);
     }
+    sql += " ORDER BY date DESC";
 
     let inflows;
     try {
@@ -139,6 +140,7 @@ const getOutflows = async (database, outflowsId = null, includes = []) => {
         sql += (sql.includes("WHERE") ? " &&" : " WHERE") + " outflow_id IN (?)";
         args.push(outflowsId);
     }
+    sql += " ORDER BY date DESC";
 
     let outflows;
     try {
@@ -180,6 +182,7 @@ const getFlows = async (database, flowsId = null, includes = []) => {
         sql += (sql.includes("WHERE") ? " &&" : " WHERE") + " flow_id IN (?)";
         args.push(flowsId);
     }
+    sql += " ORDER BY date DESC";
 
     let flows;
     try {
