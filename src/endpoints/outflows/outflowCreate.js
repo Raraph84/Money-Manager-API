@@ -158,6 +158,8 @@ module.exports.run = async (request, database) => {
     let id;
     try {
         id = (await database.query("INSERT INTO outflows (person_id, account_id, to_name, to_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [person.id, account.id, request.jsonBody.toName ?? null, toBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
+        await database.query("UPDATE people SET balance=ROUND(balance-?, 2) WHERE person_id=?", [request.jsonBody.amount, person.id]);
+        await database.query("UPDATE accounts SET balance=ROUND(balance-?, 2) WHERE account_id=?", [request.jsonBody.amount, account.id]);
     } catch (error) {
         request.end(500, "Internal server error");
         console.log(`SQL Error - ${__filename} - ${error}`);

@@ -189,10 +189,10 @@ const getFlows = async (database, flowsId = null, includes = []) => {
         throw new Error("Database error");
     }
 
-    const inflows = includes.includes("inflow") && flows.length > 0 ? await getInflows(database, flows.filter((flow) => flow.inflow_id).map((flow) => flow.inflow_id), subIncludes(includes, "inflow")) : null;
-    const fromAccounts = includes.includes("fromaccount") && flows.length > 0 ? await getAccounts(database, flows.filter((flow) => flow.from_account_id).map((flow) => flow.from_account_id)) : null;
-    const outflows = includes.includes("outflow") && flows.length > 0 ? await getOutflows(database, flows.filter((flow) => flow.outflow_id).map((flow) => flow.outflow_id), subIncludes(includes, "outflow")) : null;
-    const toAccounts = includes.includes("toaccount") && flows.length > 0 ? await getAccounts(database, flows.filter((flow) => flow.to_account_id).map((flow) => flow.to_account_id)) : null;
+    const inflows = includes.includes("inflow") && flows.filter((flow) => flow.inflow_id).length > 0 ? await getInflows(database, flows.filter((flow) => flow.inflow_id).map((flow) => flow.inflow_id), subIncludes(includes, "inflow")) : null;
+    const fromAccounts = includes.includes("fromaccount") && flows.filter((flow) => flow.from_account_id).length > 0 ? await getAccounts(database, flows.filter((flow) => flow.from_account_id).map((flow) => flow.from_account_id)) : null;
+    const outflows = includes.includes("outflow") && flows.filter((flow) => flow.outflow_id).length > 0 ? await getOutflows(database, flows.filter((flow) => flow.outflow_id).map((flow) => flow.outflow_id), subIncludes(includes, "outflow")) : null;
+    const toAccounts = includes.includes("toaccount") && flows.filter((flow) => flow.to_account_id).length > 0 ? await getAccounts(database, flows.filter((flow) => flow.to_account_id).map((flow) => flow.to_account_id)) : null;
 
     return flows.map((flow) => ({
         id: flow.flow_id,
