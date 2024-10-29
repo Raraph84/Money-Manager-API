@@ -10,7 +10,7 @@ module.exports.run = async (request, database) => {
 
     let flow;
     try {
-        flow = (await getFlows(database, [request.urlParams.flowId], includes))[0];
+        flow = (await getFlows(database, [request.urlParams.flowId], null, includes))[0];
     } catch (error) {
         request.end(500, "Internal server error");
         return;

@@ -8,7 +8,7 @@ const getPeople = async (database, peopleId = null) => {
     let sql = "SELECT * FROM people";
     const args = [];
     if (peopleId) {
-        sql += (sql.includes("WHERE") ? " &&" : " WHERE") + " person_id IN (?)";
+        sql += " WHERE person_id IN (?)";
         args.push(peopleId);
     }
 
@@ -37,7 +37,7 @@ const getBusinesses = async (database, businessesId = null) => {
     let sql = "SELECT * FROM businesses";
     const args = [];
     if (businessesId) {
-        sql += (sql.includes("WHERE") ? " &&" : " WHERE") + " business_id IN (?)";
+        sql += " WHERE business_id IN (?)";
         args.push(businessesId);
     }
 
@@ -65,7 +65,7 @@ const getAccounts = async (database, accountsId = null) => {
     let sql = "SELECT * FROM accounts";
     const args = [];
     if (accountsId) {
-        sql += (sql.includes("WHERE") ? " &&" : " WHERE") + " account_id IN (?)";
+        sql += " WHERE account_id IN (?)";
         args.push(accountsId);
     }
 
@@ -87,16 +87,20 @@ const getAccounts = async (database, accountsId = null) => {
 /**
  * @param {import("mysql2/promise").Pool} database 
  * @param {number[]|null} inflowsId 
+ * @param {number[]|null} peopleFilter 
  * @param {string[]} includes 
  * @returns {Promise<inflow[]>} 
  */
-const getInflows = async (database, inflowsId = null, includes = []) => {
+const getInflows = async (database, inflowsId = null, peopleFilter = null, includes = []) => {
 
     let sql = "SELECT * FROM inflows";
     const args = [];
     if (inflowsId) {
-        sql += (sql.includes("WHERE") ? " &&" : " WHERE") + " inflow_id IN (?)";
+        sql += " WHERE inflow_id IN (?)";
         args.push(inflowsId);
+    } else if (peopleFilter) {
+        sql += " WHERE person_id IN (?)";
+        args.push(peopleFilter);
     }
     sql += " ORDER BY date DESC";
 
@@ -127,16 +131,20 @@ const getInflows = async (database, inflowsId = null, includes = []) => {
 /**
  * @param {import("mysql2/promise").Pool} database 
  * @param {number[]|null} outflowsId 
+ * @param {number[]|null} peopleFilter 
  * @param {string[]} includes 
  * @returns {Promise<outflow[]>} 
  */
-const getOutflows = async (database, outflowsId = null, includes = []) => {
+const getOutflows = async (database, outflowsId = null, peopleFilter = null, includes = []) => {
 
     let sql = "SELECT * FROM outflows";
     const args = [];
     if (outflowsId) {
-        sql += (sql.includes("WHERE") ? " &&" : " WHERE") + " outflow_id IN (?)";
+        sql += " WHERE outflow_id IN (?)";
         args.push(outflowsId);
+    } else if (peopleFilter) {
+        sql += " WHERE person_id IN (?)";
+        args.push(peopleFilter);
     }
     sql += " ORDER BY date DESC";
 
@@ -167,16 +175,20 @@ const getOutflows = async (database, outflowsId = null, includes = []) => {
 /**
  * @param {import("mysql2/promise").Pool} database 
  * @param {number[]|null} flowsId 
+ * @param {number[]|null} accountsFilter 
  * @param {string[]} includes 
  * @returns {Promise<flow[]>} 
  */
-const getFlows = async (database, flowsId = null, includes = []) => {
+const getFlows = async (database, flowsId = null, accountsFilter = null, includes = []) => {
 
     let sql = "SELECT * FROM flows";
     const args = [];
     if (flowsId) {
-        sql += (sql.includes("WHERE") ? " &&" : " WHERE") + " flow_id IN (?)";
+        sql += " WHERE flow_id IN (?)";
         args.push(flowsId);
+    } else if (accountsFilter) {
+        sql += " WHERE from_account_id IN (?) || to_account_id IN (?)";
+        args.push(accountsFilter, accountsFilter);
     }
     sql += " ORDER BY date DESC";
 
@@ -188,9 +200,9 @@ const getFlows = async (database, flowsId = null, includes = []) => {
         throw new Error("Database error");
     }
 
-    const inflows = includes.includes("inflow") && flows.filter((flow) => flow.inflow_id).length > 0 ? await getInflows(database, flows.filter((flow) => flow.inflow_id).map((flow) => flow.inflow_id), subIncludes(includes, "inflow")) : null;
+    const inflows = includes.includes("inflow") && flows.filter((flow) => flow.inflow_id).length > 0 ? await getInflows(database, flows.filter((flow) => flow.inflow_id).map((flow) => flow.inflow_id), null, subIncludes(includes, "inflow")) : null;
     const fromAccounts = includes.includes("fromaccount") && flows.filter((flow) => flow.from_account_id).length > 0 ? await getAccounts(database, flows.filter((flow) => flow.from_account_id).map((flow) => flow.from_account_id)) : null;
-    const outflows = includes.includes("outflow") && flows.filter((flow) => flow.outflow_id).length > 0 ? await getOutflows(database, flows.filter((flow) => flow.outflow_id).map((flow) => flow.outflow_id), subIncludes(includes, "outflow")) : null;
+    const outflows = includes.includes("outflow") && flows.filter((flow) => flow.outflow_id).length > 0 ? await getOutflows(database, flows.filter((flow) => flow.outflow_id).map((flow) => flow.outflow_id), null, subIncludes(includes, "outflow")) : null;
     const toAccounts = includes.includes("toaccount") && flows.filter((flow) => flow.to_account_id).length > 0 ? await getAccounts(database, flows.filter((flow) => flow.to_account_id).map((flow) => flow.to_account_id)) : null;
 
     return flows.map((flow) => ({

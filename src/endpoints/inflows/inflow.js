@@ -10,7 +10,7 @@ module.exports.run = async (request, database) => {
 
     let inflow;
     try {
-        inflow = (await getInflows(database, [request.urlParams.inflowId], includes))[0];
+        inflow = (await getInflows(database, [request.urlParams.inflowId], null, includes))[0];
     } catch (error) {
         request.end(500, "Internal server error");
         return;

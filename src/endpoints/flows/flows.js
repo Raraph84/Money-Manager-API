@@ -6,11 +6,12 @@ const { getFlows } = require("../../resources");
  */
 module.exports.run = async (request, database) => {
 
-    const includes = request.searchParams.get("includes")?.toLowerCase().split(",") || [];
+    const includes = request.searchParams.get("includes")?.toLowerCase().split(",") ?? [];
+    const accounts = request.searchParams.get("accounts")?.split(",") ?? null;
 
     let flows;
     try {
-        flows = await getFlows(database, null, includes);
+        flows = await getFlows(database, null, accounts, includes);
     } catch (error) {
         request.end(500, "Internal server error");
         return;
