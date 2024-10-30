@@ -200,19 +200,65 @@ const getFlows = async (database, flowsId = null, accountsFilter = null, include
         throw new Error("Database error");
     }
 
-    const inflows = includes.includes("inflow") && flows.filter((flow) => flow.inflow_id).length > 0 ? await getInflows(database, flows.filter((flow) => flow.inflow_id).map((flow) => flow.inflow_id), null, subIncludes(includes, "inflow")) : null;
     const fromAccounts = includes.includes("fromaccount") && flows.filter((flow) => flow.from_account_id).length > 0 ? await getAccounts(database, flows.filter((flow) => flow.from_account_id).map((flow) => flow.from_account_id)) : null;
-    const outflows = includes.includes("outflow") && flows.filter((flow) => flow.outflow_id).length > 0 ? await getOutflows(database, flows.filter((flow) => flow.outflow_id).map((flow) => flow.outflow_id), null, subIncludes(includes, "outflow")) : null;
     const toAccounts = includes.includes("toaccount") && flows.filter((flow) => flow.to_account_id).length > 0 ? await getAccounts(database, flows.filter((flow) => flow.to_account_id).map((flow) => flow.to_account_id)) : null;
 
     return flows.map((flow) => ({
         id: flow.flow_id,
-        inflow: inflows?.find((inflow) => inflow.id === flow.inflow_id) ?? flow.inflow_id,
         fromAccount: fromAccounts?.find((fromAccount) => fromAccount.id === flow.from_account_id) ?? flow.from_account_id,
-        outflow: outflows?.find((outflow) => outflow.id === flow.outflow_id) ?? flow.outflow_id,
         toAccount: toAccounts?.find((toAccount) => toAccount.id === flow.to_account_id) ?? flow.to_account_id,
         amount: flow.amount,
         date: flow.date
+    }));
+};
+
+/**
+ * @param {import("mysql2/promise").Pool} database 
+ * @param {number[]|null} flowsLinkId 
+ * @param {number[]|null} flowsFilter 
+ * @param {number[]|null} inflowsFilter 
+ * @param {number[]|null} outflowsFilter 
+ * @param {string[]} includes 
+ * @returns {Promise<flows_link[]>} 
+ */
+const getFlowsLinks = async (database, flowsLinkId = null, flowsFilter = null, inflowsFilter = null, outflowsFilter = null, includes = []) => {
+
+    let sql = "SELECT * FROM flows_links";
+    const args = [];
+    if (flowsLinkId) {
+        sql += " WHERE flow_link_id IN (?)";
+        args.push(flowsLinkId);
+    } else if (flowsFilter) {
+        sql += " WHERE flow_id IN (?)";
+        args.push(flowsFilter);
+    } else if (inflowsFilter) {
+        sql += " WHERE inflow_id IN (?)";
+        args.push(inflowsFilter);
+    } else if (outflowsFilter) {
+        sql += " WHERE outflow_id IN (?)";
+        args.push(outflowsFilter);
+    }
+
+    let flowsLinks;
+    try {
+        [flowsLinks] = await database.query(sql, args);
+    } catch (error) {
+        console.log(`SQL Error - ${__filename} - ${error}`);
+        throw new Error("Database error");
+    }
+
+    const flows = includes.includes("flow") && flowsLinks.length > 0 ? await getFlows(database, flowsLinks.map((flowsLink) => flowsLink.flow_id), subIncludes(includes, "flow")) : null;
+    const filteredInflows = flowsLinks.filter((flowsLink) => flowsLink.inflow_id);
+    const inflows = includes.includes("inflow") && filteredInflows.length > 0 ? await getInflows(database, filteredInflows.map((flowsLink) => flowsLink.inflow_id), null, subIncludes(includes, "inflow")) : null;
+    const filteredOutflows = flowsLinks.filter((flowsLink) => flowsLink.outflow_id);
+    const outflows = includes.includes("outflow") && filteredOutflows.length > 0 ? await getOutflows(database, filteredOutflows.map((flowsLink) => flowsLink.outflow_id), null, subIncludes(includes, "outflow")) : null;
+
+    return flowsLinks.map((flowsLink) => ({
+        id: flowsLink.flow_link_id,
+        flow: flows?.find((flow) => flow.id === flowsLink.flow_id) ?? flowsLink.flow_id,
+        inflow: inflows?.find((inflow) => inflow.id === flowsLink.inflow_id) ?? flowsLink.inflow_id,
+        outflow: outflows?.find((outflow) => outflow.id === flowsLink.outflow_id) ?? flowsLink.outflow_id,
+        amount: flowsLink.amount
     }));
 };
 
@@ -271,11 +317,17 @@ module.exports = {
  * 
  * @typedef {{
  *     id: number,
- *     inflow: inflow|number|null,
  *     fromAccount: account|number|null,
- *     outflow: outflow|number|null,
  *     toAccount: account|number|null,
  *     amount: number,
  *     date: number
  * }} flow 
+ * 
+ * @typedef {{
+ *     id: number,
+ *     flow_id: number,
+ *     inflow_id: number|null,
+ *     outflow_id: number|null,
+ *     amount: number
+ * }} flows_link 
  */

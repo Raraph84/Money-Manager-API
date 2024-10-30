@@ -21,28 +21,38 @@ module.exports.run = async (request, database) => {
         return;
     }
 
-    if (typeof request.jsonBody.fromName === "undefined" && typeof request.jsonBody.fromBusiness === "undefined") {
-        request.end(400, "Missing from name or from business");
+    if (typeof request.jsonBody.fromName === "undefined") {
+        request.end(400, "Missing from name");
+        return
+    }
+
+    if (typeof request.jsonBody.fromName !== "string" && request.jsonBody.fromName !== null) {
+        request.end(400, "From name must be a string or null");
         return;
     }
 
-    if (typeof request.jsonBody.fromName !== "undefined" && typeof request.jsonBody.fromBusiness !== "undefined") {
-        request.end(400, "From name and from business cannot be both defined");
-        return;
-    }
-
-    if (typeof request.jsonBody.fromName !== "undefined" && typeof request.jsonBody.fromName !== "string") {
-        request.end(400, "From name must be a string");
-        return;
-    }
-
-    if (typeof request.jsonBody.fromName !== "undefined" && (request.jsonBody.fromName.length < 2 || request.jsonBody.fromName.length > 50)) {
+    if (request.jsonBody.fromName !== null && (request.jsonBody.fromName.length < 2 || request.jsonBody.fromName.length > 50)) {
         request.end(400, "From name must be between 2 and 50 characters");
         return;
     }
 
-    if (typeof request.jsonBody.fromBusiness !== "undefined" && typeof request.jsonBody.fromBusiness !== "number") {
-        request.end(400, "From business must be a number");
+    if (typeof request.jsonBody.fromBusiness === "undefined") {
+        request.end(400, "Missing from business");
+        return
+    }
+
+    if (typeof request.jsonBody.fromBusiness !== "number" && request.jsonBody.fromBusiness !== null) {
+        request.end(400, "From business must be a number or null");
+        return;
+    }
+
+    if (request.jsonBody.fromName === null && request.jsonBody.fromBusiness === null) {
+        request.end(400, "From name and from business cannot be both null");
+        return;
+    }
+
+    if (request.jsonBody.fromName !== null && request.jsonBody.fromBusiness !== null) {
+        request.end(400, "From name and from business cannot be both set");
         return;
     }
 
@@ -116,7 +126,7 @@ module.exports.run = async (request, database) => {
     }
 
     let fromBusiness;
-    if (typeof request.jsonBody.fromBusiness !== "undefined") {
+    if (request.jsonBody.fromBusiness !== null) {
         try {
             fromBusiness = (await getBusinesses(database, [request.jsonBody.fromBusiness]))[0];
         } catch (error) {
@@ -133,7 +143,7 @@ module.exports.run = async (request, database) => {
 
     let id;
     try {
-        id = (await database.query("INSERT INTO inflows (person_id, from_name, from_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [person.id, request.jsonBody.fromName ?? null, fromBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
+        id = (await database.query("INSERT INTO inflows (person_id, from_name, from_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [person.id, request.jsonBody.fromName, fromBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
         await database.query("UPDATE people SET balance=ROUND(balance+?, 2) WHERE person_id=?", [request.jsonBody.amount, person.id]);
     } catch (error) {
         request.end(500, "Internal server error");

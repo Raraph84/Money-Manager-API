@@ -21,28 +21,38 @@ module.exports.run = async (request, database) => {
         return;
     }
 
-    if (typeof request.jsonBody.toName === "undefined" && typeof request.jsonBody.toBusiness === "undefined") {
-        request.end(400, "Missing to name or to business");
+    if (typeof request.jsonBody.toName === "undefined") {
+        request.end(400, "Missing to name");
+        return
+    }
+
+    if (typeof request.jsonBody.toName !== "string" && request.jsonBody.toName !== null) {
+        request.end(400, "To name must be a string or null");
         return;
     }
 
-    if (typeof request.jsonBody.toName !== "undefined" && typeof request.jsonBody.toBusiness !== "undefined") {
-        request.end(400, "To name and to business cannot be both defined");
-        return;
-    }
-
-    if (typeof request.jsonBody.toName !== "undefined" && typeof request.jsonBody.toName !== "string") {
-        request.end(400, "To name must be a string");
-        return;
-    }
-
-    if (typeof request.jsonBody.toName !== "undefined" && (request.jsonBody.toName.length < 2 || request.jsonBody.toName.length > 50)) {
+    if (request.jsonBody.toName !== null && (request.jsonBody.toName.length < 2 || request.jsonBody.toName.length > 50)) {
         request.end(400, "To name must be between 2 and 50 characters");
         return;
     }
 
-    if (typeof request.jsonBody.toBusiness !== "undefined" && typeof request.jsonBody.toBusiness !== "number") {
-        request.end(400, "To business must be a number");
+    if (typeof request.jsonBody.toBusiness === "undefined") {
+        request.end(400, "Missing to business");
+        return
+    }
+
+    if (typeof request.jsonBody.toBusiness !== "number" && request.jsonBody.toBusiness !== null) {
+        request.end(400, "To business must be a number or null");
+        return;
+    }
+
+    if (request.jsonBody.toName === null && request.jsonBody.toBusiness === null) {
+        request.end(400, "To name and to business cannot be both null");
+        return;
+    }
+
+    if (request.jsonBody.toName !== null && request.jsonBody.toBusiness !== null) {
+        request.end(400, "To name and to business cannot be both set");
         return;
     }
 
@@ -116,7 +126,7 @@ module.exports.run = async (request, database) => {
     }
 
     let toBusiness;
-    if (typeof request.jsonBody.toBusiness !== "undefined") {
+    if (request.jsonBody.toBusiness !== null) {
         try {
             toBusiness = (await getBusinesses(database, [request.jsonBody.toBusiness]))[0];
         } catch (error) {
@@ -133,7 +143,7 @@ module.exports.run = async (request, database) => {
 
     let id;
     try {
-        id = (await database.query("INSERT INTO outflows (person_id, to_name, to_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [person.id, request.jsonBody.toName ?? null, toBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
+        id = (await database.query("INSERT INTO outflows (person_id, to_name, to_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [person.id, request.jsonBody.toName, toBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
         await database.query("UPDATE people SET balance=ROUND(balance-?, 2) WHERE person_id=?", [request.jsonBody.amount, person.id]);
     } catch (error) {
         request.end(500, "Internal server error");
