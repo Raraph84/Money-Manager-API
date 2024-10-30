@@ -115,6 +115,11 @@ const getInflows = async (database, inflowsId = null, peopleFilter = null, inclu
     const people = includes.includes("person") && inflows.length > 0 ? await getPeople(database, inflows.map((inflow) => inflow.person_id)) : null;
     const fromBusinesses = includes.includes("frombusiness") && inflows.filter((inflow) => inflow.from_business_id).length > 0 ? await getBusinesses(database, inflows.filter((inflow) => inflow.from_business_id).map((inflow) => inflow.from_business_id)) : null;
 
+    if (includes.includes("links") && inflows.length > 0) {
+        const flowsLinks = await getFlowsLinks(database, null, null, null, inflows.map((inflow) => inflow.inflow_id), subIncludes(includes, "links"));
+        for (const inflow of inflows) inflow.links = flowsLinks.filter((flowsLink) => (flowsLink.inflow.id ?? flowsLink.inflow) === inflow.inflow_id);
+    }
+
     return inflows.map((inflow) => ({
         id: inflow.inflow_id,
         person: people?.find((person) => person.id === inflow.person_id) ?? inflow.person_id,
@@ -124,7 +129,8 @@ const getInflows = async (database, inflowsId = null, peopleFilter = null, inclu
         description: inflow.description,
         startDate: inflow.start_date,
         endDate: inflow.end_date,
-        date: inflow.date
+        date: inflow.date,
+        links: inflow.links
     }));
 };
 
@@ -159,6 +165,11 @@ const getOutflows = async (database, outflowsId = null, peopleFilter = null, inc
     const people = includes.includes("person") && outflows.length > 0 ? await getPeople(database, outflows.map((outflow) => outflow.person_id)) : null;
     const toBusinesses = includes.includes("tobusiness") && outflows.filter((outflow) => outflow.to_business_id).length > 0 ? await getBusinesses(database, outflows.filter((outflow) => outflow.to_business_id).map((outflow) => outflow.to_business_id)) : null;
 
+    if (includes.includes("links") && outflows.length > 0) {
+        const flowsLinks = await getFlowsLinks(database, null, null, null, outflows.map((outflow) => outflow.outflow_id), subIncludes(includes, "links"));
+        for (const outflow of outflows) outflow.links = flowsLinks.filter((flowsLink) => (flowsLink.outflow.id ?? flowsLink.outflow) === outflow.outflow_id);
+    }
+
     return outflows.map((outflow) => ({
         id: outflow.outflow_id,
         person: people?.find((person) => person.id === outflow.person_id) ?? outflow.person_id,
@@ -168,7 +179,8 @@ const getOutflows = async (database, outflowsId = null, peopleFilter = null, inc
         description: outflow.description,
         startDate: outflow.start_date,
         endDate: outflow.end_date,
-        date: outflow.date
+        date: outflow.date,
+        links: outflow.links
     }));
 };
 
@@ -253,7 +265,7 @@ const getFlowsLinks = async (database, flowsLinkId = null, flowsFilter = null, i
         throw new Error("Database error");
     }
 
-    const flows = includes.includes("flow") && flowsLinks.length > 0 ? await getFlows(database, flowsLinks.map((flowsLink) => flowsLink.flow_id), subIncludes(includes, "flow")) : null;
+    const flows = includes.includes("flow") && flowsLinks.length > 0 ? await getFlows(database, flowsLinks.map((flowsLink) => flowsLink.flow_id), null, subIncludes(includes, "flow")) : null;
     const filteredInflows = flowsLinks.filter((flowsLink) => flowsLink.inflow_id);
     const inflows = includes.includes("inflow") && filteredInflows.length > 0 ? await getInflows(database, filteredInflows.map((flowsLink) => flowsLink.inflow_id), null, subIncludes(includes, "inflow")) : null;
     const filteredOutflows = flowsLinks.filter((flowsLink) => flowsLink.outflow_id);
