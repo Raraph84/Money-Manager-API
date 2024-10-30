@@ -203,12 +203,18 @@ const getFlows = async (database, flowsId = null, accountsFilter = null, include
     const fromAccounts = includes.includes("fromaccount") && flows.filter((flow) => flow.from_account_id).length > 0 ? await getAccounts(database, flows.filter((flow) => flow.from_account_id).map((flow) => flow.from_account_id)) : null;
     const toAccounts = includes.includes("toaccount") && flows.filter((flow) => flow.to_account_id).length > 0 ? await getAccounts(database, flows.filter((flow) => flow.to_account_id).map((flow) => flow.to_account_id)) : null;
 
+    if (includes.includes("links") && flows.length > 0) {
+        const flowsLinks = await getFlowsLinks(database, null, flows.map((flow) => flow.flow_id), null, null, subIncludes(includes, "links"));
+        for (const flow of flows) flow.links = flowsLinks.filter((flowsLink) => (flowsLink.flow.id ?? flowsLink.flow) === flow.flow_id);
+    }
+
     return flows.map((flow) => ({
         id: flow.flow_id,
         fromAccount: fromAccounts?.find((fromAccount) => fromAccount.id === flow.from_account_id) ?? flow.from_account_id,
         toAccount: toAccounts?.find((toAccount) => toAccount.id === flow.to_account_id) ?? flow.to_account_id,
         amount: flow.amount,
-        date: flow.date
+        date: flow.date,
+        links: flow.links
     }));
 };
 
@@ -254,7 +260,7 @@ const getFlowsLinks = async (database, flowsLinkId = null, flowsFilter = null, i
     const outflows = includes.includes("outflow") && filteredOutflows.length > 0 ? await getOutflows(database, filteredOutflows.map((flowsLink) => flowsLink.outflow_id), null, subIncludes(includes, "outflow")) : null;
 
     return flowsLinks.map((flowsLink) => ({
-        id: flowsLink.flow_link_id,
+        id: flowsLink.flows_link_id,
         flow: flows?.find((flow) => flow.id === flowsLink.flow_id) ?? flowsLink.flow_id,
         inflow: inflows?.find((inflow) => inflow.id === flowsLink.inflow_id) ?? flowsLink.inflow_id,
         outflow: outflows?.find((outflow) => outflow.id === flowsLink.outflow_id) ?? flowsLink.outflow_id,
@@ -270,7 +276,8 @@ module.exports = {
     getAccounts,
     getInflows,
     getOutflows,
-    getFlows
+    getFlows,
+    getFlowsLinks
 };
 
 /**
@@ -320,14 +327,15 @@ module.exports = {
  *     fromAccount: account|number|null,
  *     toAccount: account|number|null,
  *     amount: number,
- *     date: number
+ *     date: number,
+ *     links?: flows_link[]
  * }} flow 
  * 
  * @typedef {{
  *     id: number,
- *     flow_id: number,
- *     inflow_id: number|null,
- *     outflow_id: number|null,
+ *     flow: number|flow,
+ *     inflow: number|inflow|null,
+ *     outflow: number|outflow|null,
  *     amount: number
  * }} flows_link 
  */
