@@ -101,6 +101,11 @@ module.exports.run = async (request, database) => {
         return;
     }
 
+    if ((request.jsonBody.startDate === null) !== (request.jsonBody.endDate === null)) {
+        request.end(400, "Start date and end date must be both set or both null");
+        return;
+    }
+
     if (typeof request.jsonBody.date === "undefined") {
         request.end(400, "Missing date");
         return;

@@ -77,6 +77,7 @@ tasks.addTask(async (resolve) => {
 
         let total = 0;
         for (const flowsLink of flowFlowsLinks) total += flowsLink.amount;
+        total = Math.round(total * 100) / 100;
 
         if (total !== flow.amount)
             console.log(`Total amount of flow ${flow.id} is incorrect (inflow: ${flow.amount}, links: ${total}).`);
@@ -94,6 +95,7 @@ tasks.addTask(async (resolve) => {
 
         let total = 0;
         for (const flowsLink of inflowFlowsLinks) total += flowsLink.amount;
+        total = Math.round(total * 100) / 100;
 
         if (total !== inflow.amount)
             console.log(`Total amount of inflow ${inflow.id} is incorrect (inflow: ${inflow.amount}, links: ${total}).`);
@@ -111,6 +113,7 @@ tasks.addTask(async (resolve) => {
 
         let total = 0;
         for (const flowsLink of outflowFlowsLinks) total += flowsLink.amount;
+        total = Math.round(total * 100) / 100;
 
         if (total !== outflow.amount)
             console.log(`Total amount of outflow ${outflow.id} is incorrect (inflow: ${outflow.amount}, links: ${total}).`);
