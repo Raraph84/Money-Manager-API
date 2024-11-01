@@ -66,6 +66,16 @@ module.exports.run = async (request, database) => {
         return;
     }
 
+    if (typeof request.jsonBody.fees === "undefined") {
+        request.end(400, "Missing fees");
+        return;
+    }
+
+    if (typeof request.jsonBody.fees !== "number") {
+        request.end(400, "Fees must be a number");
+        return;
+    }
+
     if (typeof request.jsonBody.description === "undefined") {
         request.end(400, "Missing description");
         return;
@@ -148,7 +158,7 @@ module.exports.run = async (request, database) => {
 
     let id;
     try {
-        id = (await database.query("INSERT INTO inflows (person_id, from_name, from_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [person.id, request.jsonBody.fromName, fromBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
+        id = (await database.query("INSERT INTO inflows (person_id, from_name, from_business_id, amount, fees, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [person.id, request.jsonBody.fromName, fromBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.fees, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
         await database.query("UPDATE people SET balance=ROUND(balance+?, 2) WHERE person_id=?", [request.jsonBody.amount, person.id]);
     } catch (error) {
         request.end(500, "Internal server error");
