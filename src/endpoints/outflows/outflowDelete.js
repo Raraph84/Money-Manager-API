@@ -22,7 +22,7 @@ module.exports.run = async (request, database) => {
     try {
         if (outflow.links.length) await database.query("DELETE FROM flows_links WHERE outflow_id=?", [outflow.id]);
         await database.query("DELETE FROM outflows WHERE outflow_id=?", [outflow.id]);
-        await database.query("UPDATE people SET balance=ROUND(balance-?, 2) WHERE person_id=?", [outflow.amount, outflow.person]);
+        await database.query("UPDATE people SET balance=ROUND(balance+?, 2) WHERE person_id=?", [outflow.amount, outflow.person]);
     } catch (error) {
         console.log(`SQL Error - ${__filename} - ${error}`);
         request.end(500, "Internal server error");
