@@ -116,7 +116,7 @@ const getInflows = async (database, inflowsId = null, peopleFilter = null, inclu
     const fromBusinesses = includes.includes("frombusiness") && inflows.filter((inflow) => inflow.from_business_id).length > 0 ? await getBusinesses(database, inflows.filter((inflow) => inflow.from_business_id).map((inflow) => inflow.from_business_id)) : null;
 
     if (includes.includes("links") && inflows.length > 0) {
-        const flowsLinks = await getFlowsLinks(database, null, null, null, inflows.map((inflow) => inflow.inflow_id), subIncludes(includes, "links"));
+        const flowsLinks = await getFlowsLinks(database, null, null, inflows.map((inflow) => inflow.inflow_id), null, subIncludes(includes, "links"));
         for (const inflow of inflows) inflow.links = flowsLinks.filter((flowsLink) => (flowsLink.inflow.id ?? flowsLink.inflow) === inflow.inflow_id);
     }
 
@@ -319,7 +319,8 @@ module.exports = {
  *     description: string|null,
  *     startDate: number|null,
  *     endDate: number|null,
- *     date: number
+ *     date: number,
+ *     links?: flows_link[]
  * }} inflow 
  * 
  * @typedef {{
@@ -331,7 +332,8 @@ module.exports = {
  *     description: string|null,
  *     startDate: number|null,
  *     endDate: number|null,
- *     date: number
+ *     date: number,
+ *     links?: flows_link[]
  * }} outflow 
  * 
  * @typedef {{
