@@ -1,6 +1,6 @@
 {
     "database": {
-        "host": "localhost",
+        "host": "raraph.fr",
         "user": "money_manager_api",
         "database": "money_manager"
     },
