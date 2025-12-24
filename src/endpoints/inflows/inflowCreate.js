@@ -1,4 +1,4 @@
-const validators = require("../../inflowValidators");
+const validators = require("../../flowValidators");
 
 /**
  * @param {import("raraph84-lib/src/Request")} request
@@ -14,12 +14,7 @@ module.exports.run = async (request, database) => {
     let fromBusiness;
     try {
         person = await validators.validatePerson(request, database);
-        fromBusiness = await validators.validateFrom(
-            request,
-            database,
-            request.jsonBody.fromName,
-            request.jsonBody.fromBusiness
-        );
+        fromBusiness = await validators.validateFrom(request, database);
         validators.validateAmount(request);
         validators.validateFees(request);
         validators.validateDescription(request);

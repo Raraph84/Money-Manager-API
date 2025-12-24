@@ -86,6 +86,64 @@ const validateFrom = async (request, database) => {
     return fromBusiness;
 };
 
+const validateTo = async (request, database) => {
+    if (typeof request.jsonBody.toName === "undefined") {
+        request.end(400, "Missing to name");
+        throw new Error();
+    }
+
+    if (typeof request.jsonBody.toName !== "string" && request.jsonBody.toName !== null) {
+        request.end(400, "To name must be a string or null");
+        throw new Error();
+    }
+
+    if (
+        request.jsonBody.toName !== null &&
+        (request.jsonBody.toName.length < 2 || request.jsonBody.toName.length > 50)
+    ) {
+        request.end(400, "To name must be between 2 and 50 characters");
+        throw new Error();
+    }
+
+    if (typeof request.jsonBody.toBusiness === "undefined") {
+        request.end(400, "Missing to business");
+        throw new Error();
+    }
+
+    if (typeof request.jsonBody.toBusiness !== "number" && request.jsonBody.toBusiness !== null) {
+        request.end(400, "To business must be a number or null");
+        throw new Error();
+    }
+
+    if (request.jsonBody.toName === null && request.jsonBody.toBusiness === null) {
+        request.end(400, "To name and to business cannot be both null");
+        throw new Error();
+    }
+
+    if (request.jsonBody.toName !== null && request.jsonBody.toBusiness !== null) {
+        request.end(400, "To name and to business cannot be both set");
+        throw new Error();
+    }
+
+    let toBusiness;
+    if (request.jsonBody.toBusiness !== null) {
+        try {
+            toBusiness = (await getBusinesses(database, [request.jsonBody.toBusiness]))[0];
+        } catch (error) {
+            request.end(500, "Internal server error");
+            console.log(`SQL Error - ${__filename} - ${error}`);
+            throw new Error();
+        }
+
+        if (!toBusiness) {
+            request.end(400, "This business does not exist");
+            throw new Error();
+        }
+    }
+
+    return toBusiness;
+};
+
 const validateAmount = (request) => {
     if (typeof request.jsonBody.amount === "undefined") {
         request.end(400, "Missing amount");
