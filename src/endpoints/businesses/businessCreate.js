@@ -1,9 +1,8 @@
 /**
- * @param {import("raraph84-lib/src/Request")} request 
- * @param {import("mysql2/promise").Pool} database 
+ * @param {import("raraph84-lib/src/Request")} request
+ * @param {import("mysql2/promise").Pool} database
  */
 module.exports.run = async (request, database) => {
-
     if (!request.jsonBody) {
         request.end(400, "Invalid JSON");
         return;
@@ -34,10 +33,10 @@ module.exports.run = async (request, database) => {
     }
 
     request.end(200, { id });
-}
+};
 
 module.exports.infos = {
     path: "/businesses",
     method: "POST",
     requiresAuth: true
-}
+};

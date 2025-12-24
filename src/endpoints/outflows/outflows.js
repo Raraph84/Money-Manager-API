@@ -1,11 +1,10 @@
 const { getOutflows } = require("../../resources");
 
 /**
- * @param {import("raraph84-lib/src/Request")} request 
- * @param {import("mysql2/promise").Pool} database 
+ * @param {import("raraph84-lib/src/Request")} request
+ * @param {import("mysql2/promise").Pool} database
  */
 module.exports.run = async (request, database) => {
-
     const includes = request.searchParams.get("includes")?.toLowerCase().split(",") ?? [];
     const people = request.searchParams.get("people")?.split(",") ?? null;
 
@@ -18,10 +17,10 @@ module.exports.run = async (request, database) => {
     }
 
     request.end(200, { outflows });
-}
+};
 
 module.exports.infos = {
     path: "/outflows",
     method: "GET",
     requiresAuth: true
-}
+};

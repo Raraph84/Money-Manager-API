@@ -39,14 +39,17 @@ const validateFrom = async (request, database) => {
         throw new Error();
     }
 
-    if (request.jsonBody.fromName !== null && (request.jsonBody.fromName.length < 2 || request.jsonBody.fromName.length > 50)) {
+    if (
+        request.jsonBody.fromName !== null &&
+        (request.jsonBody.fromName.length < 2 || request.jsonBody.fromName.length > 50)
+    ) {
         request.end(400, "From name must be between 2 and 50 characters");
         throw new Error();
     }
 
     if (typeof request.jsonBody.fromBusiness === "undefined") {
         request.end(400, "Missing from business");
-        throw new Error()
+        throw new Error();
     }
 
     if (typeof request.jsonBody.fromBusiness !== "number" && request.jsonBody.fromBusiness !== null) {
@@ -118,7 +121,10 @@ const validateDescription = (request) => {
         throw new Error();
     }
 
-    if (request.jsonBody.description !== null && (request.jsonBody.description.length < 2 || request.jsonBody.description.length > 100)) {
+    if (
+        request.jsonBody.description !== null &&
+        (request.jsonBody.description.length < 2 || request.jsonBody.description.length > 100)
+    ) {
         request.end(400, "Description must be between 2 and 100 characters");
         throw new Error();
     }

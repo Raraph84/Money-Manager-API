@@ -1,11 +1,10 @@
 const { getPeople, getBusinesses } = require("../../resources");
 
 /**
- * @param {import("raraph84-lib/src/Request")} request 
- * @param {import("mysql2/promise").Pool} database 
+ * @param {import("raraph84-lib/src/Request")} request
+ * @param {import("mysql2/promise").Pool} database
  */
 module.exports.run = async (request, database) => {
-
     if (!request.jsonBody) {
         request.end(400, "Invalid JSON");
         return;
@@ -23,7 +22,7 @@ module.exports.run = async (request, database) => {
 
     if (typeof request.jsonBody.toName === "undefined") {
         request.end(400, "Missing to name");
-        return
+        return;
     }
 
     if (typeof request.jsonBody.toName !== "string" && request.jsonBody.toName !== null) {
@@ -31,14 +30,17 @@ module.exports.run = async (request, database) => {
         return;
     }
 
-    if (request.jsonBody.toName !== null && (request.jsonBody.toName.length < 2 || request.jsonBody.toName.length > 50)) {
+    if (
+        request.jsonBody.toName !== null &&
+        (request.jsonBody.toName.length < 2 || request.jsonBody.toName.length > 50)
+    ) {
         request.end(400, "To name must be between 2 and 50 characters");
         return;
     }
 
     if (typeof request.jsonBody.toBusiness === "undefined") {
         request.end(400, "Missing to business");
-        return
+        return;
     }
 
     if (typeof request.jsonBody.toBusiness !== "number" && request.jsonBody.toBusiness !== null) {
@@ -76,7 +78,10 @@ module.exports.run = async (request, database) => {
         return;
     }
 
-    if (request.jsonBody.description !== null && (request.jsonBody.description.length < 2 || request.jsonBody.description.length > 100)) {
+    if (
+        request.jsonBody.description !== null &&
+        (request.jsonBody.description.length < 2 || request.jsonBody.description.length > 100)
+    ) {
         request.end(400, "Description must be between 2 and 100 characters");
         return;
     }
@@ -127,7 +132,7 @@ module.exports.run = async (request, database) => {
 
     if (!person) {
         request.end(400, "This person does not exist");
-        return
+        return;
     }
 
     let toBusiness;
@@ -148,8 +153,25 @@ module.exports.run = async (request, database) => {
 
     let id;
     try {
-        id = (await database.query("INSERT INTO outflows (person_id, to_name, to_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [person.id, request.jsonBody.toName, toBusiness?.id ?? null, request.jsonBody.amount, request.jsonBody.description, request.jsonBody.startDate, request.jsonBody.endDate, request.jsonBody.date]))[0].insertId;
-        await database.query("UPDATE people SET balance=ROUND(balance-?, 2) WHERE person_id=?", [request.jsonBody.amount, person.id]);
+        id = (
+            await database.query(
+                "INSERT INTO outflows (person_id, to_name, to_business_id, amount, description, start_date, end_date, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                [
+                    person.id,
+                    request.jsonBody.toName,
+                    toBusiness?.id ?? null,
+                    request.jsonBody.amount,
+                    request.jsonBody.description,
+                    request.jsonBody.startDate,
+                    request.jsonBody.endDate,
+                    request.jsonBody.date
+                ]
+            )
+        )[0].insertId;
+        await database.query("UPDATE people SET balance=ROUND(balance-?, 2) WHERE person_id=?", [
+            request.jsonBody.amount,
+            person.id
+        ]);
     } catch (error) {
         request.end(500, "Internal server error");
         console.log(`SQL Error - ${__filename} - ${error}`);
@@ -157,10 +179,10 @@ module.exports.run = async (request, database) => {
     }
 
     request.end(200, { id });
-}
+};
 
 module.exports.infos = {
     path: "/outflows",
     method: "POST",
     requiresAuth: true
-}
+};

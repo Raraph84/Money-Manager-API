@@ -1,11 +1,10 @@
 const { getFlows, getInflows, getOutflows } = require("../../../resources");
 
 /**
- * @param {import("raraph84-lib/src/Request")} request 
- * @param {import("mysql2/promise").Pool} database 
+ * @param {import("raraph84-lib/src/Request")} request
+ * @param {import("mysql2/promise").Pool} database
  */
 module.exports.run = async (request, database) => {
-
     if (!request.jsonBody) {
         request.end(400, "Invalid JSON");
         return;
@@ -96,7 +95,12 @@ module.exports.run = async (request, database) => {
 
     let id;
     try {
-        id = (await database.query("INSERT INTO flows_links (flow_id, inflow_id, outflow_id, amount) VALUES (?, ?, ?, ?)", [flow.id, inflow?.id ?? null, outflow?.id ?? null, request.jsonBody.amount]))[0].insertId;
+        id = (
+            await database.query(
+                "INSERT INTO flows_links (flow_id, inflow_id, outflow_id, amount) VALUES (?, ?, ?, ?)",
+                [flow.id, inflow?.id ?? null, outflow?.id ?? null, request.jsonBody.amount]
+            )
+        )[0].insertId;
     } catch (error) {
         request.end(500, "Internal server error");
         console.log(`SQL Error - ${__filename} - ${error}`);
@@ -104,10 +108,10 @@ module.exports.run = async (request, database) => {
     }
 
     request.end(200, { id });
-}
+};
 
 module.exports.infos = {
     path: "/flows/:flowId/links",
     method: "POST",
     requiresAuth: true
-}
+};

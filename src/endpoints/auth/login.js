@@ -2,11 +2,10 @@ const { randomString } = require("raraph84-lib");
 const bcrypt = require("bcrypt");
 
 /**
- * @param {import("raraph84-lib/src/Request")} request 
- * @param {import("mysql2/promise").Pool} database 
+ * @param {import("raraph84-lib/src/Request")} request
+ * @param {import("mysql2/promise").Pool} database
  */
 module.exports.run = async (request, database) => {
-
     if (!request.jsonBody) {
         request.end(400, "Invalid JSON");
         return;
@@ -36,13 +35,14 @@ module.exports.run = async (request, database) => {
         return;
     }
 
-    if (!await bcrypt.compare(request.jsonBody.password, process.env.PASSWORD)) {
-
+    if (!(await bcrypt.compare(request.jsonBody.password, process.env.PASSWORD))) {
         try {
             if (!fails || fails.date < request.date - 24 * 60 * 60 * 1000)
-                await database.query("INSERT INTO login_fails (ip, fails, date) VALUES (?, 1, ?) ON DUPLICATE KEY UPDATE fails=1, date=?", [request.ip, request.date, request.date]);
-            else
-                await database.query("UPDATE login_fails SET fails=fails+1 WHERE IP=?", [request.ip]);
+                await database.query(
+                    "INSERT INTO login_fails (ip, fails, date) VALUES (?, 1, ?) ON DUPLICATE KEY UPDATE fails=1, date=?",
+                    [request.ip, request.date, request.date]
+                );
+            else await database.query("UPDATE login_fails SET fails=fails+1 WHERE IP=?", [request.ip]);
         } catch (error) {
             request.end(500, "Internal server error");
             console.log(`SQL Error - ${__filename} - ${error}`);
@@ -64,10 +64,10 @@ module.exports.run = async (request, database) => {
     }
 
     request.end(200, { token });
-}
+};
 
 module.exports.infos = {
     path: "/auth/login",
     method: "POST",
     requiresAuth: false
-}
+};

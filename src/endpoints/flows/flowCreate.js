@@ -1,11 +1,10 @@
 const { getAccounts } = require("../../resources");
 
 /**
- * @param {import("raraph84-lib/src/Request")} request 
- * @param {import("mysql2/promise").Pool} database 
+ * @param {import("raraph84-lib/src/Request")} request
+ * @param {import("mysql2/promise").Pool} database
  */
 module.exports.run = async (request, database) => {
-
     if (!request.jsonBody) {
         request.end(400, "Invalid JSON");
         return;
@@ -36,7 +35,11 @@ module.exports.run = async (request, database) => {
         return;
     }
 
-    if (request.jsonBody.fromAccount !== null && request.jsonBody.toAccount !== null && request.jsonBody.fromAccount === request.jsonBody.toAccount) {
+    if (
+        request.jsonBody.fromAccount !== null &&
+        request.jsonBody.toAccount !== null &&
+        request.jsonBody.fromAccount === request.jsonBody.toAccount
+    ) {
         request.end(400, "From account and to account cannot be the same");
         return;
     }
@@ -95,9 +98,22 @@ module.exports.run = async (request, database) => {
 
     let id;
     try {
-        id = (await database.query("INSERT INTO flows (from_account_id, to_account_id, amount, date) VALUES (?, ?, ?, ?)", [fromAccount?.id ?? null, toAccount?.id ?? null, request.jsonBody.amount, request.jsonBody.date]))[0].insertId;
-        if (fromAccount) await database.query("UPDATE accounts SET balance=ROUND(balance-?, 2) WHERE account_id=?", [request.jsonBody.amount, fromAccount.id]);
-        if (toAccount) await database.query("UPDATE accounts SET balance=ROUND(balance+?, 2) WHERE account_id=?", [request.jsonBody.amount, toAccount.id]);
+        id = (
+            await database.query(
+                "INSERT INTO flows (from_account_id, to_account_id, amount, date) VALUES (?, ?, ?, ?)",
+                [fromAccount?.id ?? null, toAccount?.id ?? null, request.jsonBody.amount, request.jsonBody.date]
+            )
+        )[0].insertId;
+        if (fromAccount)
+            await database.query("UPDATE accounts SET balance=ROUND(balance-?, 2) WHERE account_id=?", [
+                request.jsonBody.amount,
+                fromAccount.id
+            ]);
+        if (toAccount)
+            await database.query("UPDATE accounts SET balance=ROUND(balance+?, 2) WHERE account_id=?", [
+                request.jsonBody.amount,
+                toAccount.id
+            ]);
     } catch (error) {
         request.end(500, "Internal server error");
         console.log(`SQL Error - ${__filename} - ${error}`);
@@ -105,10 +121,10 @@ module.exports.run = async (request, database) => {
     }
 
     request.end(200, { id });
-}
+};
 
 module.exports.infos = {
     path: "/flows",
     method: "POST",
     requiresAuth: true
-}
+};

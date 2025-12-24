@@ -1,11 +1,10 @@
 const { getPeople } = require("../../resources");
 
 /**
- * @param {import("raraph84-lib/src/Request")} request 
- * @param {import("mysql2/promise").Pool} database 
+ * @param {import("raraph84-lib/src/Request")} request
+ * @param {import("mysql2/promise").Pool} database
  */
 module.exports.run = async (request, database) => {
-
     let people;
     try {
         people = await getPeople(database);
@@ -15,10 +14,10 @@ module.exports.run = async (request, database) => {
     }
 
     request.end(200, { people });
-}
+};
 
 module.exports.infos = {
     path: "/people",
     method: "GET",
     requiresAuth: true
-}
+};

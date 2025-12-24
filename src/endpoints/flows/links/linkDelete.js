@@ -1,11 +1,10 @@
 const { getFlows, getInflows, getOutflows } = require("../../../resources");
 
 /**
- * @param {import("raraph84-lib/src/Request")} request 
- * @param {import("mysql2/promise").Pool} database 
+ * @param {import("raraph84-lib/src/Request")} request
+ * @param {import("mysql2/promise").Pool} database
  */
 module.exports.run = async (request, database) => {
-
     let flow;
     try {
         flow = (await getFlows(database, [request.urlParams.flowId], null, ["links"]))[0];
@@ -34,10 +33,10 @@ module.exports.run = async (request, database) => {
     }
 
     request.end(204);
-}
+};
 
 module.exports.infos = {
     path: "/flows/:flowId/links/:linkId",
     method: "DELETE",
     requiresAuth: true
-}
+};

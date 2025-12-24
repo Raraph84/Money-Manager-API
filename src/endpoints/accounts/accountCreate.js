@@ -1,9 +1,8 @@
 /**
- * @param {import("raraph84-lib/src/Request")} request 
- * @param {import("mysql2/promise").Pool} database 
+ * @param {import("raraph84-lib/src/Request")} request
+ * @param {import("mysql2/promise").Pool} database
  */
 module.exports.run = async (request, database) => {
-
     if (!request.jsonBody) {
         request.end(400, "Invalid JSON");
         return;
@@ -26,7 +25,8 @@ module.exports.run = async (request, database) => {
 
     let id;
     try {
-        id = (await database.query("INSERT INTO accounts (name, balance) VALUES (?, 0)", [request.jsonBody.name]))[0].insertId;
+        id = (await database.query("INSERT INTO accounts (name, balance) VALUES (?, 0)", [request.jsonBody.name]))[0]
+            .insertId;
     } catch (error) {
         request.end(500, "Internal server error");
         console.log(`SQL Error - ${__filename} - ${error}`);
@@ -34,10 +34,10 @@ module.exports.run = async (request, database) => {
     }
 
     request.end(200, { id });
-}
+};
 
 module.exports.infos = {
     path: "/accounts",
     method: "POST",
     requiresAuth: true
-}
+};

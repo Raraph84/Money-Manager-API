@@ -8,24 +8,35 @@ require("dotenv").config({ path: [".env.local", ".env"] });
 
 const tasks = new TaskManager();
 
-const database = myqsl.createPool({ password: process.env.DATABASE_PASSWORD, charset: "utf8mb4_general_ci", ...config.database });
-tasks.addTask((resolve, reject) => {
-    console.log("Connecting to the database...");
-    database.query("SELECT 1").then(() => {
-        console.log("Connected to the database.");
-        resolve();
-    }).catch((error) => {
-        console.log("Cannot connect to the database - " + error);
-        reject();
-    });
-}, (resolve) => database.end().then(() => resolve()));
+const database = myqsl.createPool({
+    password: process.env.DATABASE_PASSWORD,
+    charset: "utf8mb4_general_ci",
+    ...config.database
+});
+tasks.addTask(
+    (resolve, reject) => {
+        console.log("Connecting to the database...");
+        database
+            .query("SELECT 1")
+            .then(() => {
+                console.log("Connected to the database.");
+                resolve();
+            })
+            .catch((error) => {
+                console.log("Cannot connect to the database - " + error);
+                reject();
+            });
+    },
+    (resolve) => database.end().then(() => resolve())
+);
 
-const endpointsFiles = fs.readdirSync(path.join(__dirname, "src", "endpoints"), { recursive: true }).filter((file) => file.endsWith(".js"))
+const endpointsFiles = fs
+    .readdirSync(path.join(__dirname, "src", "endpoints"), { recursive: true })
+    .filter((file) => file.endsWith(".js"))
     .map((command) => require(path.join(__dirname, "src", "endpoints", command)));
 
 const api = new HttpServer();
 api.on("request", async (/** @type {import("raraph84-lib/src/Request")} */ request) => {
-
     const endpoints = filterEndpointsByPath(endpointsFiles, request);
 
     request.setHeader("Access-Control-Allow-Origin", "*");
@@ -58,10 +69,14 @@ api.on("request", async (/** @type {import("raraph84-lib/src/Request")} */ reque
     }
 
     if (request.headers.authorization) {
-
         let token;
         try {
-            token = (await database.query("SELECT * FROM tokens WHERE token=? && date>?", [request.headers.authorization, request.date - 24 * 60 * 60 * 1000]))[0][0];
+            token = (
+                await database.query("SELECT * FROM tokens WHERE token=? && date>?", [
+                    request.headers.authorization,
+                    request.date - 24 * 60 * 60 * 1000
+                ])
+            )[0][0];
         } catch (error) {
             request.end(500, "Internal server error");
             console.log(`SQL Error - ${__filename} - ${error}`);
@@ -76,22 +91,28 @@ api.on("request", async (/** @type {import("raraph84-lib/src/Request")} */ reque
         request.authenticated = true;
 
         if (request.date > token.date) {
-            database.query("UPDATE tokens SET date=? WHERE token=?", [request.date, token.token])
+            database
+                .query("UPDATE tokens SET date=? WHERE token=?", [request.date, token.token])
                 .catch((error) => console.log(`SQL Error - ${__filename} - ${error}`));
         }
     }
 
     endpoint.run(request, database);
 });
-tasks.addTask((resolve, reject) => {
-    console.log("Starting the HTTP server...");
-    api.listen(config.apiPort).then(() => {
-        console.log("HTTP server started on port " + config.apiPort + ".");
-        resolve();
-    }).catch((error) => {
-        console.log("Cannot start the HTTP server - " + error);
-        reject();
-    });
-}, (resolve) => api.close().then(() => resolve()));
+tasks.addTask(
+    (resolve, reject) => {
+        console.log("Starting the HTTP server...");
+        api.listen(config.apiPort)
+            .then(() => {
+                console.log("HTTP server started on port " + config.apiPort + ".");
+                resolve();
+            })
+            .catch((error) => {
+                console.log("Cannot start the HTTP server - " + error);
+                reject();
+            });
+    },
+    (resolve) => api.close().then(() => resolve())
+);
 
 tasks.run();
