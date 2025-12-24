@@ -230,6 +230,7 @@ const validateDate = (request) => {
 module.exports = {
     validatePerson,
     validateFrom,
+    validateTo,
     validateAmount,
     validateFees,
     validateDescription,
